@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="1fffa80f-07ac-4d71-b388-3ff8e92b6656" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<file:config name="File_Config" doc:name="File Config" doc:id="f2fc1bf3-1bd5-42bc-9f85-eca017954768" >
+		<file:connection workingDir="C:\Users\ssande\Downloads" />
+	</file:config>
+	<salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="66fdbd60-6bb9-4f2d-9983-f33a31b854fc" >
+		<salesforce:basic-connection username="sandesandey65-ncaf@force.com" password="SHIRISHAh6@" securityToken="USvmgz1DnSTfgaHrLDQQiAku" url="https://login.salesforce.com/services/Soap/u/55.0"/>
+	</salesforce:sfdc-config>
+	<flow name="batch-processFlow" doc:id="e59a8db2-b3fe-4de0-9c84-01d40a9b4d1e" >
+		<http:listener doc:name="Listener" doc:id="507aa024-7600-4ef5-b4e3-8b6955a87386" config-ref="HTTP_Listener_config" path="/batch"/>
+<!-- [STUDIO:"read-input-test-file"]		<file:read doc:name="read-input-test-file" doc:id="4f746916-7446-486d-be1b-9b83553ecf74" config-ref="File_Config" path="C:\Users\ssande\Downloads\test.csv"/> [STUDIO] -->
+<!-- [STUDIO:"converting csv into json format"]		<ee:transform doc:name="converting csv into json format" doc:id="37ba725a-d84e-4dd2-bb89-8b3c9c7af6d9" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[//%dw 2.0
+////input payload application/csv separator = '|'
+output application/json
+//var  data1 =  payload 
+//var data = read(data1, "application/csv", {separator: '|'})
+//
+//&#45;&#45;-
+//data
+
+var val = keysOf(payload reduce $)
+
+var van = valuesOf(payload reduce $)
+
+var van3 = val[0] splitBy "|"
+
+var van4 = van[0] splitBy "|"
+
+&#45;&#45;-
+
+[van3 map ((item, index) -> {
+
+(item): van4[index]
+
+}) reduce ($$ ++ $)]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform> [STUDIO] -->
+		<logger level="INFO" doc:name="payload" doc:id="4c069bda-dc28-47ce-88e4-14a6cfd726ea" message="#[payload]" />
+		<flow-ref doc:name="batch-processSub_Flow" doc:id="168a9749-ec8d-4d5d-a2a3-b1ca50688e03" name="batch-processSub_Flow"/>
+	</flow>
+	<sub-flow name="batch-processSub_Flow" doc:id="d99b2544-4d18-42b8-a510-f7dcc6e564f0" >
+		<salesforce:query-all doc:name="Query all" doc:id="665f8d8b-ad15-4a91-aabb-4af2afc51f65" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query ><![CDATA[select fields (ALL) from Opportunity LIMIT 200]]></salesforce:salesforce-query>
+		</salesforce:query-all>
+	</sub-flow>
+</mule>
